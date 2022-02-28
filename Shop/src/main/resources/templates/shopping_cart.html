@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>lendlease Shop</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <h1>Shopping Cart</h1>
+    </div>
+    <table class="table">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">Product Name</th>
+            <th scope="col">Description</th>
+            <th scope="col">Price</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">Total Amount</th>
+            <th scope="col">Action</th>
+        </tr>
+        </thead>
+        <tbody id="productsData">
+
+        </tbody>
+    </table>
+    <div class="d-flex justify-content-end">
+        <div class="col-lg-7 d-flex justify-content-end">
+            <h2>Final Amount: </h2>&nbsp;
+            <label id = "finalTotal" style="font-size: 28px; font-weight: bold;">
+                [Final Total Amount]
+            </label>
+        </div>
+        <div class="col-lg-2">
+            <input type="button" class="btn btn-primary" value="Back to product page" onclick="navigateBack()">
+        </div>
+    </div>
+
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script type="text/javascript">
+
+    $(document).ready(function(){
+      $("button").click(function(){
+        $("p").slideToggle();
+      });
+    });
+
+    fetch("http://localhost:8080/cart/list").then(
+        res=>{
+            res.json().then(
+                data=>{
+                    if(data.length > 0){
+                        var temp = "";
+                        var finalTotalAmount = 0;
+
+                        data.forEach((u)=>{
+                            finalTotalAmount += u.subTotal;
+                            temp += "<tr>";
+                            temp += "<th>" + u.product.name + "</th>";
+                            temp += "<td>" + u.product.description + "</td>";
+                            temp += "<td>" + u.product.price.toFixed(2) + "</td>";
+                            temp += "<td><input type='number' id='"+ u.product.id +"' value='"+ u.quantity +"' name='price' placeholder='Enter quantity' onchange='updateQuantity(this)' /></td>";
+                            temp += "<td>" + u.subTotal.toFixed(2) + "</td>";
+                            temp += "<td><button type='button' id='"+ u.product.id +"' class='btn btn-primary' onclick='deleteRow(this.id)'>Delete</button></td>";
+                        })
+                        document.getElementById("productsData").innerHTML = temp;
+                        document.getElementById("finalTotal").innerHTML = (Math.round(finalTotalAmount * 100) / 100).toFixed(2);
+                    }
+                }
+            )
+        }
+    )
+
+    function deleteRow(id) {
+        var url = "http://localhost:8080/cart/delete/" + id;
+
+        fetch(url, {
+            method: 'DELETE'
+        }).then(
+            res=>{
+                alert("Product deleted from shopping cart");
+                window.location.reload();
+                return false;
+            }
+        )
+
+    }
+
+    function updateQuantity(qtyObject) {
+
+        if (qtyObject.value <= 0) {
+          alert("Quantity must be more than 0");
+        }
+        else {
+            var addURL = "http://localhost:8080/cart/update/" + qtyObject.id + "/" + qtyObject.value;
+            fetch(addURL,{
+                method: "POST"
+            }).then(
+                res=>{
+                    alert("Quantity is updated");
+                    window.location.reload();
+                    return false;
+                }
+            )
+        }
+    }
+
+    function navigateBack() {
+        window.location.replace("http://localhost:8080/product");
+    }
+</script>
+</body>
+</html>

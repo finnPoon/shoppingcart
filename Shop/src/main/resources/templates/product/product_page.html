@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity5">
+<head>
+    <meta charset="UTF-8">
+    <title>lendlease Shop</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="d-flex justify-content-end">
+        <div class="col-lg-7"></div>
+            <div class="row" sec:authorize="isAuthenticated()">
+                <div class="col-lg-5">
+                    Username: <b><span sec:authentication="name">Username</span></b>
+                    <span sec:authentication="principal.authorities">Roles</span>
+                </div>
+                <div class="col-lg-2">
+                    <form th:action="@{/logout}" method="post">
+                        <input type="submit" value="Logout" />
+                    </form>
+                </div>
+                <div class="col-lg-2">
+                    <form th:action="@{/cart}" method="get">
+                        <input type="submit" value="View Cart" />
+                    </form>
+                </div>
+            </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-3">
+            <label>Filter by category:</label>
+            <select name="category" id="category" th:onchange="'filterCategory(this)'">
+                <option th:value="'0'" th:text="All"></option>
+                <option th:each="category : ${categoryItems}" th:value="${category.id}" th:text="${category.name}"></option>
+            </select>
+        </div>
+        <div class="col-lg-3" sec:authorize="hasAuthority('ADMIN')">
+            <a th:href = "@{/products/new}" class="btn btn-primary btn-sm mb-3">Add Product</a>
+        </div>
+    </div>
+    <table class="table">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Product Name</th>
+            <th scope="col">Description</th>
+            <th scope="col">Price</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">Actions</th>
+        </tr>
+        </thead>
+        <tbody id="productsData">
+            <tr th:each="productItems : ${productItems}">
+                <td><p th:text="${productItems.id}"></p></td>
+                <td><p th:text="${productItems.name}"></p></td>
+                <td><p th:text="${productItems.description}"></p></td>
+                <td><p th:text="${#numbers.formatDecimal(productItems.price, 0, 'COMMA', 2, 'POINT')}"></p></td>
+                <td><input type="number" th:id="'inputQty'+ ${productItems.id}" name="price" placeholder="Enter quantity" /></td>
+                <td>
+                    <button type="button" th:id="'addToCart'+${productItems.id}" class="btn btn-primary" th:attr="onclick=|addRowToCart('${productItems.id}')|" >Add to Cart</button>
+                    <button type="button" sec:authorize="hasAuthority('ADMIN')" th:id="'edit_'+${productItems.id}" class="btn btn-primary" onclick="editRow(this.id)">Edit</button>
+                    <button type="button" sec:authorize="hasAuthority('ADMIN')" th:id="'delete_'+${productItems.id}" class="btn btn-primary" onclick="deleteRow(this.id)">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script type="text/javascript">
+
+function addRowToCart(elementId) {
+
+    var finalInputQtyId = "inputQty" + elementId;
+
+    var qtyValue = document.getElementById(finalInputQtyId).value;
+
+    if (qtyValue <= 0) {
+      alert("Quantity must be more than 0");
+    }
+    else {
+        var addURL = "http://localhost:8080/cart/add/" + elementId + "/" + document.getElementById(finalInputQtyId).value;
+
+        fetch(addURL,{
+            method: "POST"
+        });
+        alert("Item added to cart");
+    }
+}
+
+function editRow(elementId) {
+    var productId = elementId.split('_')[1];
+
+    sessionStorage.setItem("productId", productId);
+    window.location.replace("http://localhost:8080/products/edit");
+}
+
+function deleteRow(elementId) {
+    var productId = elementId.split('_')[1];
+    var url = "http://localhost:8080/products/delete/" + productId;
+
+    fetch(url, {
+        method: 'DELETE'
+    }).then(
+        res=>{
+            alert("Product Deleted");
+            window.location.reload();
+            return false;
+        }
+    )
+
+}
+
+function filterCategory(element){
+
+    window.location.replace("http://localhost:8080/product/?categoryId=" + element.value);
+
+}
+</script>
+</body>
+</html>
